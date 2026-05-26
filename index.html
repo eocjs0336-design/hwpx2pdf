@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HWPX to PDF 로컬 변환기</title>
+    <meta name="description" content="서버 전송 없이 브라우저에서 안전하게 HWPX 파일을 PDF로 변환해 보세요. 100% 로컬 오프라인 작업 환경을 제공합니다.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="6" fill="url(#gradient-logo)" />
+                    <path d="M7 16V8M7 12H12M12 16V8M17 8L15 12M15 12L13 8M15 12V16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="gradient-logo" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#10B981"/>
+                            <stop offset="1" stop-color="#059669"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="header-title-wrapper">
+                    <h1>HWPX / DOCX <span>to</span> PDF</h1>
+                    <p class="subtitle">100% 로컬 보안 변환기 (서버 무전송)</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-demo-top" class="btn btn-secondary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                    데모 문서 보기
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="app-main">
+            <!-- Upload Panel (Initial state) -->
+            <section id="panel-upload" class="panel panel-upload active">
+                <div class="upload-card">
+                    <div class="upload-dropzone" id="dropzone">
+                        <input type="file" id="file-input" accept=".hwpx,.docx" class="file-hidden-input" multiple>
+                        <div class="dropzone-content">
+                            <div class="icon-pulse">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <h3>HWPX 또는 DOCX 파일을 여기에 드래그하거나 클릭하세요</h3>
+                            <p class="file-limit-info">컴퓨터에 저장된 .hwpx 또는 .docx 문서를 안전하게 드롭해 주세요 (여러 파일 일괄 변환 가능)</p>
+                            <span class="btn btn-primary">파일 찾아보기</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Batch Queue Section (Shown when multiple files are uploaded) -->
+                    <div id="section-batch-queue" class="batch-queue-container" style="display: none;">
+                        <div class="batch-header">
+                            <div class="batch-summary">
+                                <h3>다중 파일 일괄 변환 대기열</h3>
+                                <p id="txt-batch-summary">대기 중인 파일: 0개</p>
+                            </div>
+                            <div class="batch-progress-wrapper">
+                                <div class="progress-bar-container">
+                                    <div id="batch-overall-progress" class="progress-bar-fill" style="width: 0%;"></div>
+                                </div>
+                                <span id="txt-batch-progress-percent">0% 완료</span>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-table-wrapper">
+                            <table class="batch-table">
+                                <thead>
+                                    <tr>
+                                        <th>파일명</th>
+                                        <th style="width: 100px; text-align: center;">형식</th>
+                                        <th style="width: 120px; text-align: right;">크기</th>
+                                        <th style="width: 120px; text-align: center;">상태</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batch-queue-body">
+                                    <!-- Populated dynamically via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="batch-actions">
+                            <button id="btn-batch-clear" class="btn btn-secondary">목록 비우기</button>
+                            <button id="btn-batch-start" class="btn btn-primary">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                일괄 변환 및 다운로드 시작
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="upload-features">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </div>
+                            <h4>안벽한 로컬 보안</h4>
+                            <p>모든 변환 연산은 귀하의 컴퓨터 브라우저에서 수행됩니다. 외부 서버로 파일이 단 1Byte도 업로드되지 않습니다.</p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </div>
+                            <h4>표 및 이미지 완벽 지원</h4>
+                            <p>문서 내부의 텍스트 속성은 물론, 복잡하게 구성된 표(Table) 구조와 임베디드 이미지(BinData)까지 정교하게 복원해냅니다.</p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            </div>
+                            <h4>광고 및 요금 제한 무</h4>
+                            <p>변환 횟수나 용량에 대한 어떠한 상용 제약도 없습니다. 완전한 오프라인 웹앱으로 가볍고 빠르게 구동됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Viewer Panel (Active after loading file) -->
+            <section id="panel-viewer" class="panel panel-viewer">
+                <!-- Visual Document Preview Container -->
+                <div class="viewer-body-container">
+                    <div class="viewer-toolbar">
+                        <div class="toolbar-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            <span id="txt-filename" class="text-truncate">document.hwpx</span>
+                        </div>
+                        <div class="toolbar-zoom">
+                            <button id="btn-zoom-out" class="zoom-btn" title="축소">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                            <span id="txt-zoom" class="zoom-percent">100%</span>
+                            <button id="btn-zoom-in" class="zoom-btn" title="확대">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                            <button id="btn-zoom-fit" class="zoom-btn btn-text-icon" title="화면맞춤">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Realistic paper visualizer wrapper -->
+                    <div class="document-scroller" id="scroller">
+                        <div class="document-paper-container" id="paper-container">
+                            <!-- Target elements dynamically populated here -->
+                            <div class="paper-page" id="render-target" style="transform: scale(1.0); transform-origin: top center;">
+                                <!-- Parsed HTML goes here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side Control & Metadata Inspector Panel -->
+                <aside class="viewer-sidebar">
+                    <!-- Section 1: Actions -->
+                    <div class="sidebar-section">
+                        <h3>변환 및 다운로드</h3>
+                        <div class="actions-group">
+                            <button id="btn-download-pdf" class="btn btn-primary btn-full-width">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                PDF 파일로 다운로드
+                            </button>
+                            <button id="btn-copy-text" class="btn btn-secondary btn-full-width">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                본문 텍스트 복사
+                            </button>
+                            <button id="btn-upload-new" class="btn btn-secondary btn-full-width">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                다른 파일 업로드
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: PDF Configuration -->
+                    <div class="sidebar-section">
+                        <h3>PDF 출력 설정</h3>
+                        <div class="config-controls">
+                            <!-- Margins -->
+                            <div class="config-item">
+                                <label for="select-margins">여백 설정</label>
+                                <select id="select-margins" class="custom-select">
+                                    <option value="normal" selected>기본 여백 (Normal)</option>
+                                    <option value="narrow">좁은 여백 (Narrow)</option>
+                                    <option value="wide">넓은 여백 (Wide)</option>
+                                    <option value="zero">여백 없음 (Zero)</option>
+                                </select>
+                            </div>
+
+                            <!-- Page Size -->
+                            <div class="config-item">
+                                <label for="select-pagesize">용지 규격</label>
+                                <select id="select-pagesize" class="custom-select">
+                                    <option value="a4" selected>A4 (210 x 297 mm)</option>
+                                    <option value="letter">Letter (8.5" x 11")</option>
+                                </select>
+                            </div>
+
+                            <!-- Color Mode -->
+                            <div class="config-item">
+                                <label for="select-colormode">컬러 모드</label>
+                                <select id="select-colormode" class="custom-select">
+                                    <option value="default" selected>원본 컬러</option>
+                                    <option value="grayscale">흑백 (Grayscale)</option>
+                                    <option value="highcontrast">고대비 다크</option>
+                                </select>
+                            </div>
+
+                            <!-- PDF Compression -->
+                            <div class="config-item">
+                                <label for="select-compression">파일 용량 최적화 (압축)</label>
+                                <select id="select-compression" class="custom-select">
+                                    <option value="none" selected>원본 화질 (용량 큼)</option>
+                                    <option value="medium">일반 압축 (권장, 약 50% 절감)</option>
+                                    <option value="high">최대 압축 (최소 용량, 약 80% 절감)</option>
+                                </select>
+                            </div>
+
+                            <!-- Administrative Watermark -->
+                            <div class="config-item">
+                                <label for="select-watermark">행정 워터마크</label>
+                                <select id="select-watermark" class="custom-select">
+                                    <option value="none" selected>없음 (None)</option>
+                                    <option value="confidential">대외비 (Confidential)</option>
+                                    <option value="copy">사본 (Copy)</option>
+                                    <option value="custom">사용자 정의 텍스트</option>
+                                </select>
+                            </div>
+                            <div id="wrapper-watermark-text" class="config-item" style="display: none;">
+                                <label for="input-watermark-text">워터마크 문구</label>
+                                <input type="text" id="input-watermark-text" class="custom-input" placeholder="부처명 또는 문구 입력" value="행정안전부">
+                            </div>
+                            <div class="config-item">
+                                <div class="slider-header">
+                                    <label for="slider-watermark-opacity">워터마크 선명도</label>
+                                    <span id="txt-watermark-opacity">15%</span>
+                                </div>
+                                <input type="range" id="slider-watermark-opacity" class="custom-slider" min="5" max="40" step="5" value="15">
+                            </div>
+
+                            <!-- Extra toggles -->
+                            <div class="toggle-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="chk-include-images" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">이미지 리소스 포함</span>
+                                </label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="chk-page-breaks" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">인쇄용 페이지 구분선 표시</span>
+                                </label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="chk-include-audit" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">보안 정보 표시 (출력 IP 및 시간)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Document Inspector -->
+                    <div class="sidebar-section">
+                        <h3>문서 메타데이터 분석</h3>
+                        <div class="inspector-card">
+                            <table class="inspector-table">
+                                <tbody>
+                                    <tr>
+                                        <td class="lbl">제목</td>
+                                        <td id="meta-title" class="val">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="lbl">작성자</td>
+                                        <td id="meta-author" class="val">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="lbl">생성일자</td>
+                                        <td id="meta-date" class="val">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="lbl">한글 버전</td>
+                                        <td id="meta-version" class="val">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3 class="subsection-title">문서 구조 정보</h3>
+                        <div class="inspector-card">
+                            <table class="inspector-table">
+                                <tbody>
+                                    <tr>
+                                        <td class="lbl">문단 (Paragraphs)</td>
+                                        <td id="info-paragraphs" class="val">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="lbl">텍스트 런 (Runs)</td>
+                                        <td id="info-runs" class="val">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="lbl">표 개수 (Tables)</td>
+                                        <td id="info-tables" class="val">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="lbl">이미지 개수 (Images)</td>
+                                        <td id="info-images" class="val">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </main>
+
+        <!-- Dynamic Loader & Progress Modal Overlay -->
+        <div id="loader-overlay" class="loader-overlay">
+            <div class="loader-card">
+                <div class="spinner-container">
+                    <div class="double-spinner"></div>
+                </div>
+                <h3 id="loader-status">문서 압축 해제 중...</h3>
+                <p id="loader-details">잠시만 기다려 주세요.</p>
+                <div class="progress-bar-container">
+                    <div id="loader-progress" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>© 2026 HWPX to PDF Converter. Powered by JSZip & html2pdf.js fully client-side.</p>
+        </footer>
+    </div>
+
+    <!-- Local Libraries (100% Offline & Secure) -->
+    <script src="jszip.min.js"></script>
+    <script src="mammoth.browser.min.js"></script>
+    <script src="html2pdf.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
