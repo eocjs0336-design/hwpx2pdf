@@ -460,8 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoader();
             panelUpload.classList.remove('active');
             panelViewer.classList.add('active');
-            applyZoom(1.0);
             updatePaperLayouts();
+            triggerAutoZoomFit(); // Intelligent mobile viewport scale auto-fitting
         } else {
             updatePaperLayouts();
         }
@@ -727,8 +727,8 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoader();
             panelUpload.classList.remove('active');
             panelViewer.classList.add('active');
-            applyZoom(1.0);
             updatePaperLayouts();
+            triggerAutoZoomFit(); // Intelligent mobile viewport scale auto-fitting
         } else {
             updatePaperLayouts();
         }
@@ -1108,6 +1108,18 @@ document.addEventListener('DOMContentLoaded', () => {
         applyZoom(zoomLevel);
     }
 
+    // Auto-fit document zoom scale dynamically based on viewport bounds
+    function triggerAutoZoomFit() {
+        if (!scroller || !renderTarget) return;
+        const padding = window.innerWidth <= 768 ? 24 : 48; // Narrower padding on mobile
+        const containerWidth = scroller.clientWidth - padding;
+        const paperWidth = renderTarget.offsetWidth || 793;
+        
+        const fitScale = (containerWidth / paperWidth).toFixed(2);
+        const clampedScale = Math.min(Math.max(parseFloat(fitScale), 0.35), 2.0);
+        applyZoom(clampedScale);
+    }
+
     // Zoom Listeners
     btnZoomIn.addEventListener('click', () => {
         if (zoomLevel < 3.0) applyZoom(zoomLevel + 0.1);
@@ -1118,10 +1130,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnZoomFit.addEventListener('click', () => {
-        const containerWidth = scroller.clientWidth - 48; // padding
-        const paperWidth = renderTarget.offsetWidth;
-        const fitScale = (containerWidth / paperWidth).toFixed(2);
-        applyZoom(Math.min(Math.max(parseFloat(fitScale), 0.4), 2.0));
+        triggerAutoZoomFit();
+    });
+
+    // Handle screen rotation and desktop window resize auto-fit dynamically
+    window.addEventListener('resize', () => {
+        if (panelViewer && panelViewer.classList.contains('active')) {
+            triggerAutoZoomFit();
+        }
     });
 
     // Configuration Select Dropdowns Listeners
@@ -1675,8 +1691,8 @@ document.addEventListener('DOMContentLoaded', () => {
             panelUpload.classList.remove('active');
             panelViewer.classList.add('active');
             
-            applyZoom(1.0);
             updatePaperLayouts();
+            triggerAutoZoomFit(); // Intelligent mobile/device viewport scale auto-fitting
         }, 800);
     }
 
