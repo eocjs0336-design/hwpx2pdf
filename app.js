@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDemoTop = document.getElementById('btn-demo-top');
     const btnUploadNew = document.getElementById('btn-upload-new');
     const btnDownloadPdf = document.getElementById('btn-download-pdf');
+    const btnDownloadJpeg = document.getElementById('btn-download-jpeg');
     const btnCopyText = document.getElementById('btn-copy-text');
     
     const panelUpload = document.getElementById('panel-upload');
@@ -360,6 +361,20 @@ document.addEventListener('DOMContentLoaded', () => {
         
         currentFileName = file.name;
         txtFilename.textContent = file.name;
+        
+        // --- CRITICAL UI RESET: Instantly clean up all DOM preview nodes & inspectors ---
+        renderTarget.innerHTML = "";
+        const oldWatermarks = renderTarget.querySelectorAll('.watermark-overlay');
+        oldWatermarks.forEach(wm => wm.remove());
+        
+        metaTitle.textContent = "-";
+        metaAuthor.textContent = "-";
+        metaDate.textContent = "-";
+        metaVersion.textContent = "-";
+        infoParagraphs.textContent = "0";
+        infoRuns.textContent = "0";
+        infoTables.textContent = "0";
+        infoImages.textContent = "0";
         
         const reader = new FileReader();
         reader.onload = async function(e) {
@@ -861,24 +876,38 @@ document.addEventListener('DOMContentLoaded', () => {
             table.style.border = '1px solid #7F8C8D';
         }
         
-        // Find direct child rows only
+        // Find row nodes: Handle direct 'tr' children OR 'tr' inside 'tbody'/'thead'/'tfoot'
         const trList = [];
         for (let i = 0; i < tblNode.childNodes.length; i++) {
             const child = tblNode.childNodes[i];
-            if (child.nodeType === 1 && child.localName === 'tr') {
+            if (child.nodeType !== 1) continue;
+            
+            const tag = child.localName.toLowerCase();
+            if (tag === 'tr') {
                 trList.push(child);
+            } else if (tag === 'tbody' || tag === 'thead' || tag === 'tfoot') {
+                // Safely grab direct 'tr' elements inside table body containers
+                for (let j = 0; j < child.childNodes.length; j++) {
+                    const subChild = child.childNodes[j];
+                    if (subChild.nodeType === 1 && subChild.localName.toLowerCase() === 'tr') {
+                        trList.push(subChild);
+                    }
+                }
             }
         }
         
         trList.forEach(trNode => {
             const tr = document.createElement('tr');
             
-            // Find direct child cells only
+            // Find cell nodes: Support 'tc', 'td', and 'th'
             const tcList = [];
             for (let j = 0; j < trNode.childNodes.length; j++) {
                 const child = trNode.childNodes[j];
-                if (child.nodeType === 1 && child.localName === 'tc') {
-                    tcList.push(child);
+                if (child.nodeType === 1) {
+                    const tag = child.localName.toLowerCase();
+                    if (tag === 'tc' || tag === 'td' || tag === 'th') {
+                        tcList.push(child);
+                    }
                 }
             }
             
@@ -940,7 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (faceColor) {
                                 td.style.backgroundColor = faceColor;
                                 
-                                // Automatically adjust text color for high contrast readability
+                                // Automatically adjust text color for high contrast readability using CSS dark-cell
                                 const hex = faceColor.replace('#', '');
                                 if (hex.length === 6) {
                                     const r = parseInt(hex.substring(0, 2), 16);
@@ -948,13 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const b = parseInt(hex.substring(4, 6), 16);
                                     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
                                     if (brightness < 130) {
-                                        td.style.color = '#FFFFFF';
-                                        
-                                        // Also apply to child span elements
-                                        setTimeout(() => {
-                                            const spans = td.querySelectorAll('span, div');
-                                            spans.forEach(el => el.style.color = '#FFFFFF');
-                                        }, 0);
+                                        td.classList.add('dark-cell');
                                     }
                                 }
                             }
@@ -962,18 +985,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                // Recursively parse cell text paragraphs (under subList)
+                // Recursively parse cell text paragraphs (under subList) with a robust fallback mechanism
+                let cellParagraphs = [];
                 const subList = findElementByLocalName(tcNode, 'subList');
+                
                 if (subList) {
-                    // Iterate direct children paragraphs of subList
+                    // 1. Standard OWPML: Iterate direct children paragraphs of subList
                     for (let k = 0; k < subList.childNodes.length; k++) {
                         const cellChild = subList.childNodes[k];
                         if (cellChild.nodeType === 1 && cellChild.localName === 'p') {
-                            const pHtml = parseParagraphNode(cellChild);
-                            td.appendChild(pHtml);
+                            cellParagraphs.push(cellChild);
                         }
                     }
+                } else {
+                    // 2. Fallback A: Check if 'p' elements are direct children of tcNode
+                    for (let k = 0; k < tcNode.childNodes.length; k++) {
+                        const cellChild = tcNode.childNodes[k];
+                        if (cellChild.nodeType === 1 && cellChild.localName === 'p') {
+                            cellParagraphs.push(cellChild);
+                        }
+                    }
+                    // 3. Fallback B: Search recursively for all nested descendant 'p' elements inside tcNode
+                    if (cellParagraphs.length === 0) {
+                        findAllElementsByLocalName(tcNode, 'p', cellParagraphs);
+                    }
                 }
+                
+                cellParagraphs.forEach(pNode => {
+                    const pHtml = parseParagraphNode(pNode);
+                    td.appendChild(pHtml);
+                });
                 
                 tr.appendChild(td);
             });
@@ -1223,6 +1264,21 @@ document.addEventListener('DOMContentLoaded', () => {
         batchFilesList = [];
     });
 
+    // Logo navigation to Home screen
+    const headerLogo = document.querySelector('.header-logo');
+    if (headerLogo) {
+        headerLogo.addEventListener('click', () => {
+            panelViewer.classList.remove('active');
+            panelUpload.classList.add('active');
+            fileInput.value = "";
+            
+            // Reset batch queue layout if active
+            document.getElementById('section-batch-queue').style.display = 'none';
+            document.querySelector('.dropzone-content').style.display = 'block';
+            batchFilesList = [];
+        });
+    }
+
     // --- IP Address & Date/Time Helpers for Security Audits ---
 
     async function getClientIp() {
@@ -1293,6 +1349,36 @@ document.addEventListener('DOMContentLoaded', () => {
             exportNode.style.width = '215.9mm';
         }
         
+        // Prevent table horizontal overflow clipping by resetting absolute cell widths inside export DOM
+        try {
+            const tables = exportNode.querySelectorAll('table');
+            tables.forEach(table => {
+                table.style.width = '100%';
+                table.style.tableLayout = 'auto'; // Re-distribute columns automatically
+                const cells = table.querySelectorAll('td, th');
+                cells.forEach(cell => {
+                    cell.style.width = ''; // Strip hardcoded mm widths in print DOM
+                    cell.style.wordBreak = 'break-all'; // Force wraps
+                    cell.style.overflowWrap = 'break-word';
+                });
+            });
+        } catch (e) {
+            console.error("Error auto-fitting tables for print:", e);
+        }
+
+        // Force HWPX section break pages exactly like original Hancom document
+        try {
+            const sections = exportNode.querySelectorAll('.section-container');
+            sections.forEach((sec, idx) => {
+                if (idx > 0) {
+                    sec.style.pageBreakBefore = 'always';
+                    sec.style.breakBefore = 'page';
+                }
+            });
+        } catch (e) {
+            console.error("Error setting section page breaks for print:", e);
+        }
+        
         // Hide break line indicators in printing export
         const indicators = exportNode.querySelectorAll('.page-break-indicator');
         indicators.forEach(ind => {
@@ -1337,6 +1423,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // --- Clean empty elements at the end of the document to prevent blank trailing pages ---
+        try {
+            const allPs = Array.from(exportNode.querySelectorAll('.document-p, p, div, span'));
+            // Traverse backwards to safely strip consecutive empty nodes
+            for (let i = allPs.length - 1; i >= 0; i--) {
+                const node = allPs[i];
+                if (!node || !node.parentNode) continue;
+                
+                const text = node.textContent.replace(/\u00a0/g, ' ').trim();
+                const hasMedia = node.querySelector('img, table, svg, iframe') !== null;
+                const isWatermark = node.classList.contains('watermark-overlay') || node.classList.contains('watermark-text');
+                const isAudit = node.classList.contains('print-audit-trail');
+                
+                if (text === "" && !hasMedia && !isWatermark && !isAudit) {
+                    node.remove();
+                } else if (isWatermark || isAudit) {
+                    // Skip these non-content structural elements and keep traversing backwards
+                    continue;
+                } else {
+                    // Stop purging once we hit real visual text/images to preserve document integrity
+                    break;
+                }
+            }
+        } catch (e) {
+            console.error("Error sanitizing empty trailing elements:", e);
+        }
+
         // Read compression level
         const selectCompression = document.getElementById('select-compression');
         const compressionVal = selectCompression ? selectCompression.value : 'none';
@@ -1358,7 +1471,7 @@ document.addEventListener('DOMContentLoaded', () => {
             image:        { type: 'jpeg', quality: imgQuality },
             html2canvas:  { scale: canvasScale, useCORS: true, letterRendering: true },
             jsPDF:        { unit: 'mm', format: formatSize.toLowerCase(), orientation: 'portrait' },
-            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            pagebreak:    { mode: ['css', 'legacy'] } // Removed avoid-all to prevent random forced layout splitting blank pages
         };
 
         try {
@@ -1378,6 +1491,86 @@ document.addEventListener('DOMContentLoaded', () => {
         const outName = currentFileName.replace(/\.hwpx$/i, '').replace(/\.docx$/i, '') + '.pdf';
         await generatePdf(outName, false);
     });
+
+    // --- JPEG Image Export Logic ---
+
+    async function generateJpeg(isBatch = false) {
+        if (!isBatch) {
+            showLoader('JPEG 변환 중...', '각 구역을 고해상도 JPEG 이미지 파일로 변환하고 있습니다.', 40);
+        }
+
+        const containers = renderTarget.querySelectorAll('.section-container, .docx-content');
+        if (containers.length === 0) {
+            alert('변환할 문서 구역이 존재하지 않습니다.');
+            if (!isBatch) hideLoader();
+            return;
+        }
+
+        const selectCompression = document.getElementById('select-compression');
+        const compressionVal = selectCompression ? selectCompression.value : 'none';
+        
+        let canvasScale = 2; // Default high quality
+        if (compressionVal === 'medium') canvasScale = 1.5;
+        else if (compressionVal === 'high') canvasScale = 1.0;
+
+        for (let idx = 0; idx < containers.length; idx++) {
+            const container = containers[idx];
+            
+            // Clean element copy for rendering individual page image
+            const exportNode = container.cloneNode(true);
+            exportNode.style.transform = 'none';
+            exportNode.style.boxShadow = 'none';
+            exportNode.style.borderRadius = '0';
+            exportNode.style.margin = '0';
+            exportNode.style.width = selectPageSize.value === 'a4' ? '210mm' : '215.9mm';
+            exportNode.style.backgroundColor = '#FFFFFF';
+            exportNode.style.color = '#111827';
+            
+            // Temporary mount container to actual DOM for html2canvas to read styles perfectly
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'absolute';
+            wrapper.style.top = '-9999px';
+            wrapper.style.left = '-9999px';
+            wrapper.style.width = exportNode.style.width;
+            wrapper.appendChild(exportNode);
+            document.body.appendChild(wrapper);
+
+            try {
+                // Ensure html2canvas is executed safely
+                const canvas = await html2canvas(exportNode, {
+                    scale: canvasScale,
+                    useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                    logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const baseName = currentFileName.replace(/\.hwpx$/i, '').replace(/\.docx$/i, '');
+                const filename = `${baseName}_page${idx + 1}.jpg`;
+
+                // Auto download trigger
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (err) {
+                console.error("Failed to generate JPEG for page " + (idx + 1), err);
+            } finally {
+                document.body.removeChild(wrapper);
+            }
+        }
+
+        if (!isBatch) hideLoader();
+    }
+
+    if (btnDownloadJpeg) {
+        btnDownloadJpeg.addEventListener('click', async () => {
+            await generateJpeg(false);
+        });
+    }
 
     // --- Interactive Demo Document Mode Generator ---
 

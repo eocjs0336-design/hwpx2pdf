@@ -87,6 +87,11 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+.header-logo:hover {
+    opacity: 0.85;
 }
 
 .header-title-wrapper h1 {
@@ -1081,9 +1086,17 @@ body {
     font-size: 8.5pt;
     color: #6B7280;
     text-align: right;
-    margin-top: 12mm;
+    margin-top: 6mm;
     border-top: 1px dashed #D1D5DB;
     padding-top: 6px;
     font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif;
     user-select: none;
+}
+
+/* Dark cell high-contrast text inherited rules */
+.dark-cell {
+    color: #FFFFFF !important;
+}
+.dark-cell span, .dark-cell div, .dark-cell p {
+    color: inherit !important;
 }

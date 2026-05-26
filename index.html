@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CRITICAL: Cache Busting to ensure fresh screens always -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>HWPX to PDF 로컬 변환기</title>
     <meta name="description" content="서버 전송 없이 브라우저에서 안전하게 HWPX 파일을 PDF로 변환해 보세요. 100% 로컬 오프라인 작업 환경을 제공합니다.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=1.0.5">
 </head>
 <body>
     <div class="app-container">
@@ -169,6 +173,10 @@
                             <button id="btn-download-pdf" class="btn btn-primary btn-full-width">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 PDF 파일로 다운로드
+                            </button>
+                            <button id="btn-download-jpeg" class="btn btn-secondary btn-full-width">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                JPEG 이미지로 다운로드
                             </button>
                             <button id="btn-copy-text" class="btn btn-secondary btn-full-width">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -346,6 +354,6 @@
     <script src="jszip.min.js"></script>
     <script src="mammoth.browser.min.js"></script>
     <script src="html2pdf.bundle.min.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=1.0.5"></script>
 </body>
 </html>
