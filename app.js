@@ -24,6 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const paperContainer = document.getElementById('paper-container');
     const renderTarget = document.getElementById('render-target');
     const scroller = document.getElementById('scroller');
+
+    // Mobile Responsive Controls
+    const mobileBtnPdf = document.getElementById('mobile-btn-pdf');
+    const mobileBtnJpeg = document.getElementById('mobile-btn-jpeg');
+    const mobileBtnToggleSidebar = document.getElementById('mobile-btn-toggle-sidebar');
+    const btnSidebarClose = document.getElementById('btn-sidebar-close');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+    const viewerSidebar = document.querySelector('.viewer-sidebar');
     
     // PDF Config Controls
     const selectMargins = document.getElementById('select-margins');
@@ -1694,6 +1702,56 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePaperLayouts();
             triggerAutoZoomFit(); // Intelligent mobile/device viewport scale auto-fitting
         }, 800);
+    }
+
+    // --- Mobile Interactivity & Drawer Toggle Logic ---
+
+    // Toggle Drawer Up
+    if (mobileBtnToggleSidebar) {
+        mobileBtnToggleSidebar.addEventListener('click', () => {
+            if (viewerSidebar) viewerSidebar.classList.add('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+        });
+    }
+
+    // Toggle Drawer Down (via Backdrop)
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', () => {
+            if (viewerSidebar) viewerSidebar.classList.remove('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+        });
+    }
+
+    // Toggle Drawer Down (via Close Button)
+    if (btnSidebarClose) {
+        btnSidebarClose.addEventListener('click', () => {
+            if (viewerSidebar) viewerSidebar.classList.remove('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+        });
+    }
+
+    // Connect Mobile Actions to existing logic
+    if (mobileBtnPdf) {
+        mobileBtnPdf.addEventListener('click', async () => {
+            // Close drawer if open
+            if (viewerSidebar) viewerSidebar.classList.remove('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+            
+            // Trigger PDF Download
+            const outName = currentFileName.replace(/\.hwpx$/i, '').replace(/\.docx$/i, '') + '.pdf';
+            await generatePdf(outName, false);
+        });
+    }
+
+    if (mobileBtnJpeg) {
+        mobileBtnJpeg.addEventListener('click', async () => {
+            // Close drawer if open
+            if (viewerSidebar) viewerSidebar.classList.remove('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+            
+            // Trigger JPEG Download
+            await generateJpeg(false);
+        });
     }
 
     // Connect Demo Action Buttons

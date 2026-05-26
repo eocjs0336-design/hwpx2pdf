@@ -166,6 +166,14 @@
 
                 <!-- Side Control & Metadata Inspector Panel -->
                 <aside class="viewer-sidebar">
+                    <!-- Mobile Close Header (Visible only on mobile drawer mode) -->
+                    <div class="sidebar-mobile-header">
+                        <h3>출력 설정 및 메타데이터</h3>
+                        <button id="btn-sidebar-close" class="btn-close-sidebar" aria-label="설정 닫기">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+
                     <!-- Section 1: Actions -->
                     <div class="sidebar-section">
                         <h3>변환 및 다운로드</h3>
@@ -327,6 +335,25 @@
                         </div>
                     </div>
                 </aside>
+
+                <!-- Mobile Floating Sticky Bottom Bar (Visible only on Mobile <= 768px) -->
+                <div id="mobile-bottom-bar" class="mobile-sticky-bottom-bar">
+                    <button id="mobile-btn-pdf" class="btn btn-primary btn-mobile-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        PDF
+                    </button>
+                    <button id="mobile-btn-jpeg" class="btn btn-secondary btn-mobile-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        JPEG
+                    </button>
+                    <button id="mobile-btn-toggle-sidebar" class="btn btn-secondary btn-mobile-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+                        출력 설정
+                    </button>
+                </div>
+
+                <!-- Backdrop Overlay for Mobile Sidebar Drawer -->
+                <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
             </section>
         </main>
 
